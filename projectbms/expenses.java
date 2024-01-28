@@ -1572,17 +1572,17 @@ public class expenses extends parentform {
     }
 
     static Logger logger = LogManager.getLogger(expenses.class);
-    
+
     public static void createNewTable() {
-      
+
         try (Connection connection = Constants.connectAzure()) {
             if (!Constants.tableExists(connection, Constants.expensesTable)) {
                 String sql = "CREATE TABLE " + Constants.expensesTable + " (\n"
-                + "	id integer PRIMARY KEY,\n"
-                + "	name text NOT NULL,\n"
-                + "	amount real, \n"
-                + "	date text NOT NULL \n"
-                + ");";
+                        + "	id INT PRIMARY KEY IDENTITY,\n"
+                        + "	name NVARCHAR(50) NOT NULL,\n"
+                        + "	amount real, \n"
+                        + "	date NVARCHAR(50) NOT NULL \n"
+                        + ");";
 
                 try (Statement statement = connection.createStatement()) {
                     statement.executeUpdate(sql);
@@ -1604,10 +1604,10 @@ public class expenses extends parentform {
                 + " VALUES(?,?,?)";
 
         String sql1 = "SELECT * "
-            + "FROM " + Constants.expensesTable + " WHERE name = ? AND CONVERT(NVARCHAR(MAX), date) = ?";
+                + "FROM " + Constants.expensesTable + " WHERE name = ? AND date = ?";
 
         String sql2 = "UPDATE " + Constants.expensesTable + " SET amount = ?"
-                + "WHERE (name,date) = (?,?)";
+                + "WHERE name= ? AND date =?";
 
         try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(sql); PreparedStatement pstmt1 = conn.prepareStatement(sql1); PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
             pstmt1.setString(1, name);
@@ -1674,21 +1674,23 @@ public class expenses extends parentform {
 
             }
         } catch (SQLException e) {
-          org.apache.logging.log4j.Logger logger = LogManager.getLogger(employee.class);
+            org.apache.logging.log4j.Logger logger = LogManager.getLogger(employee.class);
             logger.error("An error occurred while disaplying expenses list", e);
         }
     }
 
     public double totalExpenses(String date1, String date2) {
 
-        String sql = "SELECT SUM(amount) FROM " + Constants.expensesTable
+        String sql = "SELECT SUM(amount) As totalAmount FROM " + Constants.expensesTable
                 + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "'";
 
         double totalExpenese = 0;
 
         try (Connection conn = Constants.connectAzure(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
 
-            totalExpenese = rs.getDouble("SUM(amount)");
+            if (rs.next()) {
+                totalExpenese = rs.getDouble("totalAmount");
+            }
 
         } catch (SQLException e) {
             org.apache.logging.log4j.Logger logger = LogManager.getLogger(employee.class);

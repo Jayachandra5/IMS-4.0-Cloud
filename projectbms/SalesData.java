@@ -44,13 +44,13 @@ public class SalesData {
                 + " VALUES(?,?,?,?,?,?,?)";
 
         String sql1 = "SELECT * "
-        + "FROM " + Constants.salesTable + " WHERE stockName = ? AND date = ? AND customer = ?";
+                + "FROM " + Constants.salesTable + " WHERE stockName = ? AND date = ? AND customer = ?";
 
         String sql3 = "UPDATE " + Constants.salesTable + " SET (qnt,stock,amount,profit) = (?,?,?,?)"
                 + "WHERE (stockName,date,customer) = (?,?,?)";
 
         String sql2 = "UPDATE " + Constants.salesTable + " SET qnt = ?, stock = ?, amount = ?, profit = ? "
-        + "WHERE stockName = ? AND date = ? AND customer = ?";
+                + "WHERE stockName = ? AND date = ? AND customer = ?";
 
         try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(sql); PreparedStatement pstmt1 = conn.prepareStatement(sql1); PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
             pstmt1.setString(1, stockName);
@@ -146,14 +146,16 @@ public class SalesData {
 
     public double stockAmountSold(String date1, String date2) {
 
-        String sql = "SELECT stockName,SUM(stock) FROM " + Constants.salesTable
-                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "'";
+        String sql = "SELECT stockName,SUM(stock) AS totalStock FROM " + Constants.salesTable
+                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY stockName";
 
         double totalSales = 0;
 
         try (Connection conn = Constants.connectAzure(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
 
-            totalSales = rs.getDouble("SUM(stock)");
+            if (rs.next()) {
+                    totalSales = rs.getDouble("totalStock");
+                }
 
         } catch (SQLException e) {
             logger.error("An error occurred while returning TotalStockAmount Sold in "
@@ -163,18 +165,24 @@ public class SalesData {
     }
 
     public double totalSales(String date1, String date2) {
-
-        String sql = "SELECT stockName,SUM(amount) FROM " + Constants.salesTable
-                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "'";
+        String sql = "SELECT stockName, SUM(amount) AS totalAmount FROM " + Constants.salesTable
+                + " WHERE date BETWEEN ? AND ? GROUP BY stockName";
 
         double totalSales = 0;
 
-        try (Connection conn = Constants.connectAzure(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+        try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // Set parameters using PreparedStatement to prevent SQL injection
+            pstmt.setString(1, date1);
+            pstmt.setString(2, date2);
 
-            totalSales = rs.getDouble("SUM(amount)");
-
+            try (ResultSet rs = pstmt.executeQuery()) {
+                // Check if there are results before accessing them
+                if (rs.next()) {
+                    totalSales = rs.getDouble("totalAmount");
+                }
+            }
         } catch (SQLException e) {
-            logger.error("An error occurred while returning TotalSalses in "
+            logger.error("An error occurred while returning totalSales in "
                     + "class SalesData.", e);
         }
         return totalSales;
@@ -182,15 +190,19 @@ public class SalesData {
 
     public double totalProfit(String date1, String date2) {
 
-        String sql = "SELECT stockName,SUM(profit) FROM " + Constants.salesTable
-                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "'";
+        String sql = "SELECT stockName,SUM(profit) As totalProfit FROM " + Constants.salesTable
+                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY stockName";
 
         double totalProfit = 0;
 
         try (Connection conn = Constants.connectAzure(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
 
-            totalProfit = rs.getDouble("SUM(profit)");
-
+            if (rs.next()) {
+                totalProfit = rs.getDouble("totalProfit");
+            } else {
+                logger.info("No data found for the specified criteria.");
+            }
+            
         } catch (SQLException e) {
             logger.error("An error occurred while returning Total Profit in "
                     + "class SalesData.", e);
@@ -200,8 +212,8 @@ public class SalesData {
 
     public double oneItemQnt(String stockname, String date1, String date2) {
 
-        String sql = "SELECT stockName, SUM(qnt) FROM " + Constants.salesTable
-                + " WHERE date BETWEEN '" + date1 + "' AND '" + date2 + "' AND stockName=?";
+        String sql = "SELECT stockName, SUM(qnt) As totalQnt FROM " + Constants.salesTable
+                + " WHERE date BETWEEN '" + date1 + "' AND '" + date2 + "' AND stockName=? GROUP BY stockName";
 
         double sumQnt = 0;
 
@@ -209,9 +221,11 @@ public class SalesData {
 
             pstmt.setString(1, stockname);
             ResultSet rs = pstmt.executeQuery();
-            sumQnt = rs.getDouble("SUM(qnt)");
-
-            logger.info("Sales Qnt" + sumQnt);
+            if (rs.next()) {
+                sumQnt = rs.getDouble("totalQnt");
+            } else {
+                logger.info("No data found for the specified criteria.");
+            }
 
         } catch (SQLException e) {
             logger.error("An error occurred while returning one iteam qnt Sold in "

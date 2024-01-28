@@ -47,10 +47,10 @@ public class Purchase {
                 + " VALUES(?,?,?,?,?,?)";
 
         String sql1 = "SELECT * "
-                + "FROM " + Constants.purchaseTable + " WHERE (stockName,date,vendourName) = (?,?,?)";
+                + "FROM " + Constants.purchaseTable + " WHERE stockName = ? AND date= ? AND vendourName = ?";
 
-        String sql2 = "UPDATE " + Constants.purchaseTable + " SET (qnt,amount,qntAvl) = (?,?,?)"
-                + "WHERE (stockName,date,vendourName) = (?,?,?)";
+        String sql2 = "UPDATE " + Constants.purchaseTable + " SET qnt= ?, amount= ?, qntAvl = ?"
+                + "WHERE stockName =? AND date= ? vendourName= ?";
 
         try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(sql); PreparedStatement pstmt1 = conn.prepareStatement(sql1); PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
             pstmt1.setString(1, stockName);
@@ -138,14 +138,16 @@ public class Purchase {
 
     public double totalPurchase(String date1, String date2) {
 
-        String sql = "SELECT stockName,SUM(amount) FROM " + Constants.purchaseTable
-                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "'";
+        String sql = "SELECT stockName,SUM(amount) As totalAmount FROM " + Constants.purchaseTable
+                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY stockName";
 
         double totalPurchase = 0;
 
         try (Connection conn = Constants.connectAzure(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
 
-            totalPurchase = rs.getDouble("SUM(amount)");
+            if (rs.next()) {
+                totalPurchase = rs.getDouble("totalAmount");
+            }
 
             //  System.out.println(totalPurchase);
         } catch (SQLException e) {
@@ -190,8 +192,8 @@ public class Purchase {
     public double getOpen(String stockname, String date) {
         double qntAvl = 0;
         try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT qntAvl FROM " + Constants.purchaseTable
-                + " WHERE stockName = ? AND date < ? ORDER BY date DESC LIMIT 1")) {
+                "SELECT TOP 1 qntAvl FROM " + Constants.purchaseTable
+                + " WHERE stockName = ? AND date < ? ORDER BY date DESC")) {
 
             pstmt.setString(1, stockname);
             pstmt.setString(2, date);

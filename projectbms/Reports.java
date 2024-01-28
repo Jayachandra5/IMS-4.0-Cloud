@@ -686,11 +686,9 @@ public class Reports extends parentform {
         while (rs.next()) {
             String name = rs.getString("name");
             double amount = rs.getDouble("amount");
-           // String date = rs.getString("date");
+            String date = rs.getString("date");
 
-            // Adjust the processing of text, ntext, or image columns if necessary
-
-            expensesData.add(new Expenses(name, String.valueOf(amount),"22"));
+            expensesData.add(new Expenses(name, String.valueOf(amount),date));
         }
     } catch (SQLException e) {
         logger.error("An error occurred in display function of expenses table.", e);
@@ -980,7 +978,7 @@ public class Reports extends parentform {
                 downloded.setText("Report Downloaded Successfully");
 
             } catch (IOException ex) {
-                Logger.getLogger(Reports.class.getName()).log(Level.SEVERE, null, ex);
+              //  Logger.getLogger(Reports.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         });
@@ -1444,7 +1442,7 @@ public class Reports extends parentform {
                 text.setText("Report Downloaded Sussufully");
 
             } catch (IOException ex) {
-                Logger.getLogger(Reports.class.getName()).log(Level.SEVERE, null, ex);
+             //   Logger.getLogger(Reports.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         });
@@ -1651,7 +1649,7 @@ public class Reports extends parentform {
 
     public void displayReport(String date1, String date2) {
 
-        String sql = "SELECT stockName,SUM(qnt) FROM " + Constants.salesTable
+        String sql = "SELECT stockName,SUM(amount) AS totalAmount FROM " + Constants.salesTable
                 + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY stockName";
 
         double totalQntAvl = 0;
@@ -1666,7 +1664,7 @@ public class Reports extends parentform {
 
             while (rs.next()) {
                 String stockname = rs.getString("stockName");
-                double purchase = rs.getDouble("SUM(qnt)");
+                double purchase = rs.getDouble("totalAmount");
                 double avlQnt = db.displayItem(stockname);
                 double opeingQnt = buy.getOpen(stockname, date1);
                 double sale = sell.oneItemQnt(stockname, date1, date2);

@@ -50,20 +50,35 @@ public class manage {
     }
 
     public void insert(String name, double amount) {
-        String sql = "INSERT INTO " + Constants.manage + "(name,amount) VALUES(?,?)";
+    String sqlSelect = "SELECT COUNT(*) AS count FROM " + Constants.manage + " WHERE name = ?";
+    String sqlInsert = "INSERT INTO " + Constants.manage + "(name,amount) VALUES(?,?)";
 
-        try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, name);
-            pstmt.setDouble(2, amount);
+    try (Connection conn = Constants.connectAzure();
+         PreparedStatement pstmtSelect = conn.prepareStatement(sqlSelect);
+         PreparedStatement pstmtInsert = conn.prepareStatement(sqlInsert)) {
 
-            pstmt.executeUpdate();
-            System.out.println("data Inserted.");
+        // Check if the name already exists
+        pstmtSelect.setString(1, name);
+        ResultSet rs = pstmtSelect.executeQuery();
+        rs.next();
+        int count = rs.getInt("count");
 
-        } catch (SQLException e) {
-            Logger logger = LogManager.getLogger(manage.class);
-            logger.error("An error occurred while inserting into manage .", e);
+        if (count == 0) {
+            // If the name does not exist, insert it
+            pstmtInsert.setString(1, name);
+            pstmtInsert.setDouble(2, amount);
+            pstmtInsert.executeUpdate();
+            System.out.println("Data inserted.");
+        } else {
+            System.out.println("Name already exists.");
         }
+
+    } catch (SQLException e) {
+        Logger logger = LogManager.getLogger(manage.class);
+        logger.error("An error occurred while inserting into manage.", e);
     }
+}
+
 
     public void increaseAmount(String name, double amount) {
         String sql = "SELECT  name, amount "

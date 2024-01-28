@@ -237,7 +237,7 @@ public class dataVisualisation extends parentform {
 
     public String displayExpenses(String date1, String date2) {
 
-        String sql = "SELECT name,SUM(amount) FROM " + Constants.expensesTable
+        String sql = "SELECT name,SUM(amount) As totalExpenses FROM " + Constants.expensesTable
                 + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY name ";
 
         double totalExp = 0;
@@ -251,7 +251,7 @@ public class dataVisualisation extends parentform {
 
             while (rs.next()) {
                 String name = rs.getString("name");
-                double exp = rs.getDouble("SUM(amount)");
+                double exp = rs.getDouble("totalExpenses");
 
                 if (name.contains("Salary") == true) {
                     totalSalary += exp;
@@ -273,8 +273,6 @@ public class dataVisualisation extends parentform {
         }
         return datapass;
     }
-
-    
 
     public void Profit(Stage stage, String date1, String date2) {
 
@@ -354,7 +352,7 @@ public class dataVisualisation extends parentform {
 
     public String displayProfit(String date1, String date2) {
 
-        String sql = "SELECT stockname,SUM(profit) FROM " + Constants.salesTable
+        String sql = "SELECT stockname,SUM(profit) As totalProfit FROM " + Constants.salesTable
                 + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY stockname ";
 
         double totalProfit = 0;
@@ -367,7 +365,7 @@ public class dataVisualisation extends parentform {
 
             while (rs.next()) {
                 String name = rs.getString("stockname");
-                double profit = rs.getDouble("SUM(profit)");
+                double profit = rs.getDouble("totalProfit");
 
                 totalProfit += profit;
                 count++;
@@ -515,14 +513,17 @@ public class dataVisualisation extends parentform {
 
     public double totalProfit(String date1, String date2) {
 
-        String sql = "SELECT stockName,SUM(profit) FROM " + Constants.salesTable
-                + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "'";
+        String sql = "SELECT stockName, SUM(profit) AS totalProfit FROM " + Constants.salesTable +
+             " WHERE date BETWEEN '" + date1 + "' AND '" + date2 + "' GROUP BY stockName";
+
 
         double totalProfit = 0;
 
         try (Connection conn = Constants.connectAzure(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
 
-            totalProfit = rs.getDouble("SUM(profit)");
+            if (rs.next()) {
+            totalProfit = rs.getDouble("totalProfit");
+            }
 
         } catch (SQLException e) {
             logger.error("An error occurred while displaying total profit"
@@ -533,15 +534,15 @@ public class dataVisualisation extends parentform {
 
     public double totalExpenses(String date1, String date2) {
 
-        String sql = "SELECT name,SUM(amount) FROM " + Constants.expensesTable
+        String sql = "SELECT name,SUM(amount) As totalExpenses FROM " + Constants.expensesTable
                 + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY name ";
 
         double totalExp = 0;
         try (Connection conn = Constants.connectAzure(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
 
-            while (rs.next()) {
+            if (rs.next()) {
                 // String name = rs.getString("name");
-                double exp = rs.getDouble("SUM(amount)");
+                double exp = rs.getDouble("totalExpenses");
 
                 totalExp += exp;
             }
@@ -970,7 +971,7 @@ public class dataVisualisation extends parentform {
 
     public double displayProfitOfProduct(String stockName, String date1, String date2) {
 //
-        String sql = "SELECT stockname,SUM(profit) FROM " + Constants.salesTable
+        String sql = "SELECT stockname,SUM(profit) As totalProfit FROM " + Constants.salesTable
                 + " WHERE date BETWEEN '" + date1 + "' and '" + date2 + "' GROUP BY stockname ";
 
         double Profit = 0;
@@ -982,7 +983,10 @@ public class dataVisualisation extends parentform {
                 String stockname = rs.getString("stockname");
 
                 if (stockName.equals(stockname)) {
-                    Profit = rs.getDouble("SUM(profit)");
+                    if (rs.next()) {
+                        Profit = rs.getDouble("totalProfit");
+                    }
+
                 }
             }
 

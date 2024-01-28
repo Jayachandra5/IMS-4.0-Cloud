@@ -1062,44 +1062,42 @@ public class bmsinterface extends Application {
             }
             return out;
     }  */
-    public void display(String name) {
-        String sql = "SELECT * FROM " + Constants.manage + " WHERE name = ?";
+   public void display(String name) {
+    String sql = "SELECT * FROM " + Constants.manage + " WHERE name = ?";
 
-        try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, name);
+    try (Connection conn = Constants.connectAzure(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, name);
 
-            ResultSet rs = pstmt.executeQuery();
+        ResultSet rs = pstmt.executeQuery();
 
-            Formatter formatter = new Formatter();
-            double price;
+        double price = 0;
 
-            while (rs.next()) {
-                price = rs.getDouble("amount");
-                formatter.format("%.2f", price);
-            }
-
-            String amount = String.valueOf(formatter.toString());
-
-            if (name.equals("stockamount")) {
-                b7.setText(amount);
-            }
-            if (name.equals("totalsales")) {
-                b8.setText(amount);
-            }
-            if (name.equals("expenses")) {
-                b9.setText(amount);
-            }
-            if (name.equals("profit")) {
-                b10.setText(amount);
-            }
-            if (name.equals("tax")) {
-                b12.setText(amount);
-            }
-
-        } catch (SQLException e) {
-            logger.error("An error occurred while displaying amounts in class bmsInterface", e);
+        while (rs.next()) {
+            price = rs.getDouble("amount");
         }
+
+        String amount = String.format("%.2f", price);
+
+        if (name.equals("stockamount")) {
+            b7.setText(amount);
+        }
+        if (name.equals("totalsales")) {
+            b8.setText(amount);
+        }
+        if (name.equals("expenses")) {
+            b9.setText(amount);
+        }
+        if (name.equals("profit")) {
+            b10.setText(amount);
+        }
+        if (name.equals("tax")) {
+            b12.setText(amount);
+        }
+
+    } catch (SQLException e) {
+        logger.error("An error occurred while displaying amounts in class bmsInterface", e);
     }
+}
 
     public void revenue() {
         String name1 = "profit";
